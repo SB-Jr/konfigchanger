@@ -16,3 +16,4 @@ Main use case is to Toggle Light and Dark theme based on time.
    - [ ]Konsole
 - [ ]Provide configuration file to give options on different kind of backup and restore
 - [ ]Provide options to add folder/files to add for back/restore thus entending to uncovered applications and settings
+- [ ]Provide option to listen to events and change configurations based on the change
