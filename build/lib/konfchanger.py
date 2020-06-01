@@ -40,8 +40,7 @@ def backup(ctx, config_path, config_list_path, name):
 
     config_path = utils.check_and_return_defaults(ctx, 'config_path', config_path)
     if not os.path.isdir(config_path):
-        click.echo(
-            'No backup folder found...\nCreating a backup folder at ' + config_path)
+        click.echo('No backup folder found...\nCreating a backup folder at ' + config_path)
         try:
             os.mkdir(config_path)
         except error:
@@ -57,8 +56,7 @@ def backup(ctx, config_path, config_list_path, name):
         configuration_exists = True
     try:
         if configuration_exists:
-            click.confirm(
-                'Do you want to overwrite the exisiting configuration backup?', abort=True)
+            click.confirm('Do you want to overwrite the exisiting configuration backup?', abort=True)
             shutil.rmtree(backup_location)
         os.mkdir(backup_location)
     except error:
@@ -80,7 +78,7 @@ def apply(ctx, name):
     configs = utils.get_list_configs(ctx, config_path)
     no_configs = len(configs)
     if not name or name not in configs:
-        value = click.prompt('Please enter the number of the configuration that you want to apply (should be less than '+ str(no_configs) +')', type=int)
+        value = click.prompt('Please enter the number of the configuration that you want to apply:', type=click.IntRange(1, no_configs))
         name = configs[value - 1]
     # send kwin reconfigure signal
     click.echo(name + ' ---- Applied')
@@ -97,8 +95,19 @@ def list(ctx):
 
 
 
-@konfchanger.command()
-@click.confirmation_option()
-def delete_configuration_backup():
+@konfchanger.command('delete')
+@click.option('-n', '--name')
+@click.pass_context
+def delete_configuration_backup(ctx, name):
     '''Delete a backed-up configuration'''
-    click.echo('configuration deleted')
+
+    config_path = utils.check_and_return_defaults(ctx, 'config_path', None)
+    configs = utils.get_list_configs(ctx, config_path)
+    no_configs = len(configs)
+    if not name or name not in configs:
+        value = click.prompt('Please enter the number of the configuration that you want to delete:', type=click.IntRange(1, no_configs))
+        name = configs[value - 1]
+        if click.confirm('Do you really want to delete '+ name + ' configuration?', abort=True):
+            rem_config_path = os.path.join(utils.check_and_return_defaults(ctx, 'config_path', None), name)
+            shutil.rmtree(rem_config_path)
+            click.echo(name + ' configuration deleted!!')
