@@ -37,8 +37,7 @@ def get_list_configs(ctx, config_path, print_configs=True):
         click.echo('These are the backed up configurations available')
         configs =  [configs for configs in os.listdir(config_path)]
         if print_configs:
-            for config in configs:
-                click.echo('- [ ] ' + config)
+            echo_configs(configs)
         if config_passed:
             return configs
         else:
@@ -48,8 +47,12 @@ def get_config_name(configs):
     '''Gives user a list of available configs and lets them chose one from the list'''
 
     no_configs = len(configs)
-    for i in range(1,no_configs+1):
-        click.echo('['+str(i)+'] '+configs[i-1])
+    echo_configs(configs)
     value = click.prompt('Please enter the number associated with the configuration, you want to delete:', type=click.IntRange(1, no_configs))
     name = configs[value - 1]
     return name
+
+def echo_configs(configs):
+    no_configs = len(configs)
+    for i in range(1,no_configs+1):
+        click.echo('['+str(i)+'] '+configs[i-1])

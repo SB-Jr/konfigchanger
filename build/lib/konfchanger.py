@@ -27,6 +27,9 @@ def konfchanger(ctx, config):
 
 
 
+
+
+
 @konfchanger.command()
 @click.option('-c', '--config-path', 'config_path', type=click.Path())
 @click.option('-cl', '--config-list-path', 'config_list_path', type=click.Path())
@@ -94,6 +97,7 @@ def list(ctx):
 
 @konfchanger.command('delete')
 @click.option('-n', '--name')
+@click.option('-y','--yes')
 @click.pass_context
 def delete_configuration_backup(ctx, name):
     '''Delete a backed-up configuration'''
