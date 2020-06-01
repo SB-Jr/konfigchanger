@@ -20,7 +20,7 @@ def konfchanger(ctx, config):
     except:
         click.echo('config file doesnt not exist at '+config+'\n Either add a config file or pass a <path-to-config-file> using "-c" or "--config" flag')
     else:
-        click.echo('Config file Found!! \n value = ' + str(ctx.default_map))
+        click.echo('Config file Found!!')
     pass
 
 @konfchanger.command()
@@ -30,13 +30,11 @@ def konfchanger(ctx, config):
 @click.pass_context
 def backup(ctx, config_path, config_list_path, name):
     '''Backup current configuration'''
-    if not config_list_path:
-        config_list_path = ctx.parent.default_map['config_list_path']
+
+    config_list_path = check_and_return_defaults(ctx, 'config_list_path', config_list_path)
     check_config_file(ctx, config_list_path)
 
-    if not config_path:
-        config_path = ctx.parent.default_map['config_path']
-
+    config_path = check_and_return_defaults(ctx, 'config_path', config_path)
     if not os.path.isdir(config_path):
         click.echo(
             'No backup folder found...\nCreating a backup folder at ' + config_path)
@@ -94,8 +92,13 @@ def check_config_file(ctx, config_list_path):
                    config_list_path + ' file or provide a new location using the "-cl" flag')
         ctx.abort()
 
-
-# konfchanger.add_command(backup)
-# konfchanger.add_command(apply)
-# konfchanger.add_command(delete_configuration_backup)
-# konfchanger.add_command(list)
+def check_and_return_defaults(ctx, key, value):
+    '''Checks if value is valid, if not then returns the default value from context object'''
+    if value:   #value is valid
+        return value
+    if not ctx: #if context is not valid we cant find default value
+        return None
+    elif not ctx.default_map: # if default value not present in current context then check parent context recursively
+        return check_and_return_defaults(ctx.parent, key, value)
+    else: #value is in the current context object
+        return ctx.default_map[key]
