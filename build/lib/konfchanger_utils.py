@@ -21,14 +21,35 @@ def check_and_return_defaults(ctx, key, value):
     else: #value is in the current context object
         return ctx.default_map[key]
 
-def get_list_configs(ctx, config_path):
-    if not config_path:
-        ctx.abort()
-    elif not os.path.isdir(config_path):
+def get_list_configs(ctx, config_path, print_configs=True):
+    '''Gets the list of configurations from store folder
+       If no store folder is provided then it fetches the
+       default folder and then get the list of configurations'''
+
+    config_passed = True
+    if config_path is None:
+        config_path = check_and_return_defaults(ctx, 'config_path', None)
+        config_passed = False
+
+    if not os.path.isdir(config_path):
         click.echo('Path '+ config_path+ ' is not a directory!!')
     else:
         click.echo('These are the backed up configurations available')
         configs =  [configs for configs in os.listdir(config_path)]
-        for config in configs:
-            click.echo('- [ ] ' + config)
-        return configs
+        if print_configs:
+            for config in configs:
+                click.echo('- [ ] ' + config)
+        if config_passed:
+            return configs
+        else:
+            return config_path, configs
+
+def get_config_name(configs):
+    '''Gives user a list of available configs and lets them chose one from the list'''
+
+    no_configs = len(configs)
+    for i in range(1,no_configs+1):
+        click.echo('['+str(i)+'] '+configs[i-1])
+    value = click.prompt('Please enter the number associated with the configuration, you want to delete:', type=click.IntRange(1, no_configs))
+    name = configs[value - 1]
+    return name
