@@ -1,0 +1,23 @@
+#basic plasma theme info
+/home/sbjr/.config/kdeglobals
+
+#font info
+/home/sbjr/.config/fontconfig
+
+#gtk2 info
+/home/sbjr/.config/gtk-2.0
+/home/sbjr/.config/gtkrc-2.0
+/home/sbjr/.gtkrc-2.0
+
+#gtk3 info
+/home/sbjr/.config/gtk-3.0
+/home/sbjr/.config/gtkrc
+
+#cursor theme
+/home/sbjr/.icons/cursor.theme
+
+#konsole
+'/home/sbjr/.local/share/konsole/ZSH Profile.profile'
+
+#atom
+/home/sbjr/.atom/config.cson
