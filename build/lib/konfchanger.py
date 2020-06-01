@@ -2,6 +2,7 @@ import click
 import os
 import shutil
 import json
+import konfchanger_utils as utils
 
 home_path = os.getenv('HOME')
 config = '.konfchanger_default_config'
@@ -24,6 +25,8 @@ def konfchanger(ctx, config):
         click.echo('Config file Found!!')
     pass
 
+
+
 @konfchanger.command()
 @click.option('-c', '--config-path', 'config_path', type=click.Path())
 @click.option('-cl', '--config-list-path', 'config_list_path', type=click.Path())
@@ -32,10 +35,10 @@ def konfchanger(ctx, config):
 def backup(ctx, config_path, config_list_path, name):
     '''Backup current configuration'''
 
-    config_list_path = check_and_return_defaults(ctx, 'config_list_path', config_list_path)
-    check_config_file(ctx, config_list_path)
+    config_list_path = utils.check_and_return_defaults(ctx, 'config_list_path', config_list_path)
+    utils.check_config_file(ctx, config_list_path)
 
-    config_path = check_and_return_defaults(ctx, 'config_path', config_path)
+    config_path = utils.check_and_return_defaults(ctx, 'config_path', config_path)
     if not os.path.isdir(config_path):
         click.echo(
             'No backup folder found...\nCreating a backup folder at ' + config_path)
@@ -66,12 +69,22 @@ def backup(ctx, config_path, config_list_path, name):
             name + ' Backup complete, with the folder name as ' + fixed_name)
 
 
+
 @konfchanger.command()
-@click.option('--name', required=True, prompt='Please enter the name of the configuration that you want to apply')
-def apply(name):
+@click.option('--name')
+@click.pass_context
+def apply(ctx, name):
     '''Apply a backed-up configuration'''
+
+    config_path = utils.check_and_return_defaults(ctx, 'config_path', None)
+    configs = utils.get_list_configs(ctx, config_path)
+    no_configs = len(configs)
+    if not name or name not in configs:
+        value = click.prompt('Please enter the number of the configuration that you want to apply (should be less than '+ str(no_configs) +')', type=int)
+        name = configs[value - 1]
     # send kwin reconfigure signal
     click.echo(name + ' ---- Applied')
+
 
 
 @konfchanger.command()
@@ -79,11 +92,9 @@ def apply(name):
 def list(ctx):
     '''List all available backed up configurations'''
 
-    config_path = check_and_return_defaults(ctx, 'config_path', None)
-    configs = get_list_configs(ctx, config_path)
-    click.echo('These are the backed up configurations available')
-    for config in configs:
-        click.echo('- [ ] ' + config)
+    config_path = utils.check_and_return_defaults(ctx, 'config_path', None)
+    utils.get_list_configs(ctx, config_path)
+
 
 
 @konfchanger.command()
@@ -91,32 +102,3 @@ def list(ctx):
 def delete_configuration_backup():
     '''Delete a backed-up configuration'''
     click.echo('configuration deleted')
-
-
-def check_config_file(ctx, config_list_path):
-    '''Checks the presence of config file to use in the cli'''
-
-    if not os.path.isfile(config_list_path):
-        click.echo('Configuration List not provided, so nothing will be backed up.\n Please create a ' +
-                   config_list_path + ' file or provide a new location using the "-cl" flag')
-        ctx.abort()
-
-def check_and_return_defaults(ctx, key, value):
-    '''Checks if value is valid, if not then returns the default value from context object'''
-
-    if value:   #value is valid
-        return value
-    if not ctx: #if context is not valid we cant find default value
-        return None
-    elif not ctx.default_map: # if default value not present in current context then check parent context recursively
-        return check_and_return_defaults(ctx.parent, key, value)
-    else: #value is in the current context object
-        return ctx.default_map[key]
-
-def get_list_configs(ctx, config_path):
-    if not config_path:
-        ctx.abort()
-    elif not os.path.isdir(config_path):
-        click.echo('Path '+ config_path+ ' is not a directory!!')
-    else:
-        return [configs for configs in os.listdir(config_path)]

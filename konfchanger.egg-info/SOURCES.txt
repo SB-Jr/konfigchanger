@@ -1,5 +1,6 @@
 README.md
 konfchanger.py
+konfchanger_utils.py
 setup.py
 konfchanger.egg-info/PKG-INFO
 konfchanger.egg-info/SOURCES.txt

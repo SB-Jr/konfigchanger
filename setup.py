@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='konfchanger',
     version='0.1',
-    py_modules=['konfchanger'],
+    py_modules=['konfchanger','konfchanger_utils'],
     install_requires=[
         'Click'
     ],
