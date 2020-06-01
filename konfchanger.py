@@ -12,6 +12,7 @@ config = '.konfchanger_default_config'
 @click.option('-c', '--config', 'config', default=config, type=click.Path())
 def konfchanger(ctx, config):
     '''This is a tool to backup/restore KDE configuration and styles.'''
+
     click.echo('Checking for config file')
     try:
         ctx.ensure_object(dict)
@@ -74,9 +75,15 @@ def apply(name):
 
 
 @konfchanger.command()
-def list():
+@click.pass_context
+def list(ctx):
     '''List all available backed up configurations'''
+
+    config_path = check_and_return_defaults(ctx, 'config_path', None)
+    configs = get_list_configs(ctx, config_path)
     click.echo('These are the backed up configurations available')
+    for config in configs:
+        click.echo('- [ ] ' + config)
 
 
 @konfchanger.command()
@@ -105,3 +112,11 @@ def check_and_return_defaults(ctx, key, value):
         return check_and_return_defaults(ctx.parent, key, value)
     else: #value is in the current context object
         return ctx.default_map[key]
+
+def get_list_configs(ctx, config_path):
+    if not config_path:
+        ctx.abort()
+    elif not os.path.isdir(config_path):
+        click.echo('Path '+ config_path+ ' is not a directory!!')
+    else:
+        return [configs for configs in os.listdir(config_path)]

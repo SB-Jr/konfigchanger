@@ -12,6 +12,7 @@ config = '.konfchanger_default_config'
 @click.option('-c', '--config', 'config', default=config, type=click.Path())
 def konfchanger(ctx, config):
     '''This is a tool to backup/restore KDE configuration and styles.'''
+
     click.echo('Checking for config file')
     try:
         ctx.ensure_object(dict)
@@ -74,9 +75,15 @@ def apply(name):
 
 
 @konfchanger.command()
-def list():
+@click.pass_context
+def list(ctx):
     '''List all available backed up configurations'''
+
+    config_path = check_and_return_defaults(ctx, 'config_path', None)
+    configs = get_list_configs(ctx, config_path)
     click.echo('These are the backed up configurations available')
+    for config in configs:
+        click.echo('- [ ] ' + config)
 
 
 @konfchanger.command()
@@ -87,6 +94,8 @@ def delete_configuration_backup():
 
 
 def check_config_file(ctx, config_list_path):
+    '''Checks the presence of config file to use in the cli'''
+
     if not os.path.isfile(config_list_path):
         click.echo('Configuration List not provided, so nothing will be backed up.\n Please create a ' +
                    config_list_path + ' file or provide a new location using the "-cl" flag')
@@ -94,6 +103,7 @@ def check_config_file(ctx, config_list_path):
 
 def check_and_return_defaults(ctx, key, value):
     '''Checks if value is valid, if not then returns the default value from context object'''
+
     if value:   #value is valid
         return value
     if not ctx: #if context is not valid we cant find default value
@@ -102,3 +112,11 @@ def check_and_return_defaults(ctx, key, value):
         return check_and_return_defaults(ctx.parent, key, value)
     else: #value is in the current context object
         return ctx.default_map[key]
+
+def get_list_configs(ctx, config_path):
+    if not config_path:
+        ctx.abort()
+    elif not os.path.isdir(config_path):
+        click.echo('Path '+ config_path+ ' is not a directory!!')
+    else:
+        return [configs for configs in os.listdir(config_path)]
