@@ -8,10 +8,10 @@ home_path = os.getenv('HOME')
 config = '.konfchanger_default_config'
 
 
+#@click.option('-c', '--config', 'config', default=config, type=click.Path())
 @click.group()
 @click.pass_context
-@click.option('-c', '--config', 'config', default=config, type=click.Path())
-def konfchanger(ctx, config):
+def konfchanger(ctx):
     '''This is a tool to backup/restore KDE configuration and styles.'''
 
     click.echo('Checking for config file')
@@ -26,31 +26,38 @@ def konfchanger(ctx, config):
     pass
 
 
-
-
-
-
-@konfchanger.command()
-@click.option('-c', '--config-path', 'config_path', type=click.Path())
-@click.option('-cl', '--config-list-path', 'config_list_path', type=click.Path())
-@click.option('--name', required=True, prompt='Please give a name to the current configuration backup!\nNOTE: Space in the name will be converted into "_"(underscore)')
+#@click.option('-c', '--config-path', 'config_path', type=click.Path())
+#@click.option('-cl', '--config-list-path', 'config_list_path', type=click.Path())
+@konfchanger.command('init')
 @click.pass_context
-def backup(ctx, config_path, config_list_path, name):
-    '''Backup current configuration'''
-
-    config_list_path = utils.check_and_return_defaults(ctx, 'config_list_path', config_list_path)
+def init_konfchanger(ctx):
+    config_list_path = utils.check_and_return_defaults(ctx, 'config_list_path', None)
     utils.check_config_file(ctx, config_list_path)
-
-    config_path = utils.check_and_return_defaults(ctx, 'config_path', config_path)
+    config_path = utils.check_and_return_defaults(ctx, 'config_path', None)
     if not os.path.isdir(config_path):
-        click.echo('No backup folder found...\nCreating a backup folder at ' + config_path)
+        click.echo('Creating a backup folder at ' + config_path)
         try:
             os.mkdir(config_path)
         except error:
-            click.echo(
-                'Could not create directory for config backup at ' + config_path)
+            click.echo('Could not create directory for config backup at ' + config_path)
             click.echo(error)
+            ctx.abort()
             return
+    else:
+        click.echo('Backup folder already exists at ' + config_path)
+        click.echo('You are good to go. Dont need to re-run init command again')
+
+
+@konfchanger.command()
+@click.option('--name', required=True, prompt='Please give a name to the current configuration backup!\nNOTE: <Spaces> in the name will be converted into "_"(underscore)')
+@click.pass_context
+def backup(ctx, name):
+    '''Backup current configuration'''
+
+    config_path = utils.get_value(ctx, 'config_path')
+    if not os.path.isdir(config_path):
+        click.echo('No backup folder found...\nPlease run the init command before backup')
+        ctx.abort()
     fixed_name = name.replace(' ', '_')
     backup_location = os.path.join(config_path, fixed_name)
     configuration_exists = False
@@ -94,10 +101,9 @@ def list(ctx):
     utils.get_list_configs(ctx, None)
 
 
-
+#@click.option('-y','--yes')
 @konfchanger.command('delete')
 @click.option('-n', '--name')
-@click.option('-y','--yes')
 @click.pass_context
 def delete_configuration_backup(ctx, name):
     '''Delete a backed-up configuration'''

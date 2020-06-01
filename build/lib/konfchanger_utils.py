@@ -6,7 +6,7 @@ def check_config_file(ctx, config_list_path):
 
     if not os.path.isfile(config_list_path):
         click.echo('Configuration List not provided, so nothing will be backed up.\n Please create a ' +
-                   config_list_path + ' file or provide a new location using the "-cl" flag')
+                   config_list_path + ' file')# or provide a new location using the "-cl" flag')
         ctx.abort()
 
 def check_and_return_defaults(ctx, key, value):
@@ -18,6 +18,14 @@ def check_and_return_defaults(ctx, key, value):
         return None
     elif not ctx.default_map: # if default value not present in current context then check parent context recursively
         return check_and_return_defaults(ctx.parent, key, value)
+    else: #value is in the current context object
+        return ctx.default_map[key]
+
+def get_value(ctx, key):
+    if not ctx: #if context is not valid we cant find default value
+        return None
+    elif not ctx.default_map: # if default value not present in current context then check parent context recursively
+        return get_value(ctx.parent, key)
     else: #value is in the current context object
         return ctx.default_map[key]
 
