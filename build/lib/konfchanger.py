@@ -5,7 +5,8 @@ import json
 import konfchanger_utils as utils
 
 home_path = os.getenv('HOME')
-config = '.konfchanger_default_config'
+current_path = os.getcwd()
+config = os.path.join(current_path, '.konfchanger_default_config')
 
 
 #@click.option('-c', '--config', 'config', default=config, type=click.Path())

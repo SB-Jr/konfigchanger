@@ -22,9 +22,9 @@ def check_and_return_defaults(ctx, key, value):
         return ctx.default_map[key]
 
 def get_value(ctx, key):
-    if not ctx: #if context is not valid we cant find default value
+    if ctx is None: #if context is not valid we cant find default value
         return None
-    elif not ctx.default_map: # if default value not present in current context then check parent context recursively
+    elif ctx.default_map is None: # if default value not present in current context then check parent context recursively
         return get_value(ctx.parent, key)
     else: #value is in the current context object
         return ctx.default_map[key]
@@ -36,20 +36,23 @@ def get_list_configs(ctx, config_path, print_configs=True):
 
     config_passed = True
     if config_path is None:
-        config_path = check_and_return_defaults(ctx, 'config_path', None)
+        config_path = get_value(ctx, 'config_path')
         config_passed = False
 
     if not os.path.isdir(config_path):
         click.echo('Path '+ config_path+ ' is not a directory!!')
+        ctx.abort()
     else:
-        click.echo('These are the backed up configurations available')
-        configs =  [configs for configs in os.listdir(config_path)]
-        if print_configs:
-            echo_configs(configs)
-        if config_passed:
-            return configs
+        configs =  [config for config in os.listdir(config_path)]
+        if len(configs) == 0:
+            click.echo('No backed up configs present')
         else:
-            return config_path, configs
+            if print_configs:
+                echo_configs(configs)
+            if config_passed:
+                return configs
+            else:
+                return config_path, configs
 
 def get_config_name(configs):
     '''Gives user a list of available configs and lets them chose one from the list'''
@@ -61,6 +64,7 @@ def get_config_name(configs):
     return name
 
 def echo_configs(configs):
+    click.echo('These are the stored configs:')
     no_configs = len(configs)
     for i in range(1,no_configs+1):
         click.echo('['+str(i)+'] '+configs[i-1])
