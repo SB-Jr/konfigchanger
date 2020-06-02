@@ -2,7 +2,7 @@
 This project is a small command line utility that can be used to schedule or easily hopp between KDE themes customizations.
 Main use case is to Toggle Light and Dark theme based on time.
 
-#TODO
+# TODO
  - [ ]Backup current theme
  - [ ]Restore a named theme
    - [ ]Restore with backing up current theme
