@@ -19,7 +19,7 @@ def konfchanger(ctx):
 
 
 @konfchanger.command('init')
-@click.option('-v', '--verbose')
+@click.option('-v', '--verbose', is_flag=True,  callback=utils.enable_verbose)
 @click.pass_context
 def init_konfigchanger(ctx, verbose):
     config_list_path = utils.get_config_list_path()
@@ -36,7 +36,7 @@ def init_konfigchanger(ctx, verbose):
 
 
 @konfchanger.command()
-@click.option('-v', '--verbose')
+@click.option('-v', '--verbose', is_flag=True,  callback=utils.enable_verbose)
 @click.option('--name')
 @click.pass_context
 def backup(ctx, name, verbose):
@@ -71,7 +71,7 @@ def backup(ctx, name, verbose):
 
 
 @konfchanger.command()
-@click.option('-v', '--verbose')
+@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose)
 @click.option('--name')
 @click.pass_context
 def apply(ctx, name, verbose):
@@ -91,7 +91,7 @@ def apply(ctx, name, verbose):
     else:
         if (name is not None) and (name not in stored_configs):# if wrong name is provided
             utils.logger.info(name + ' provided name doesnt match with any existing stored configurations.\n Please select one from below:\n')
-        if (Name is None) or (name not in stored_configs): #if no name is provided or wrong name is provided
+        if (name is None) or (name not in stored_configs): #if no name is provided or wrong name is provided
             name = utils.get_config_name()
     utils.create_bak_file(ctx)
     utils.copy_to_set_locations(ctx, name)
@@ -101,7 +101,7 @@ def apply(ctx, name, verbose):
 
 
 @konfchanger.command()
-@click.option('-v', '--verbose')
+@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose)
 @click.pass_context
 def list(ctx, verbose):
     '''List all available backed up configurations'''
@@ -113,7 +113,7 @@ def list(ctx, verbose):
 #@click.option('-y','--yes')
 @konfchanger.command('delete')
 @click.option('-n', '--name')
-@click.option('-v', '--verbose')
+@click.option('-v', '--verbose', is_flag=True,  callback=utils.enable_verbose)
 @click.pass_context
 def delete_configuration_backup(ctx, name, verbose):
     '''Delete a backed-up configuration'''

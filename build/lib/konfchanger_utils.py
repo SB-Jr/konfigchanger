@@ -10,7 +10,6 @@ BAK_FILE_EXTENSION = '.bak'
 class Utils:
 
     def __init__(self):
-        click.echo('Constructor called')
         self.__info_map = my_dict()
         self.logger = my_dict()
 
@@ -18,7 +17,7 @@ class Utils:
         self.__set_home_dir()
         self.__set_current_directory()
         self.__set_konfigchanger_config()
-        self.__set_verbose(True)
+        self.__set_verbose(False)
         if not self.is_konfigchanger_config_present():
             return None
         self.__load_konfigchanger_config()
@@ -59,6 +58,9 @@ class Utils:
         def identity(*args, **args1):
             pass
         self.logger.log = click.echo if verbose else identity
+
+    def enable_verbose(self, ctx, flag_name, enable_flag=False):
+        self.__set_verbose(enable_flag)
 
 
     def get_home_path(self):
@@ -160,7 +162,7 @@ class Utils:
             self.logger.info('No backed up configuration packs present!!\nBackup folder is empty')
             return
         no_configs = len(stored_configs)
-        value = click.prompt('Please enter the number associated with the configuration, you want to choose:', type=click.IntRange(1, no_configs + 1))
+        value = click.prompt('Please enter the number associated with the configuration, you want to choose:', type=click.IntRange(1, no_configs))
         name = stored_configs[value - 1]
         return name
 
