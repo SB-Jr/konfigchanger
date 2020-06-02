@@ -1,125 +1,132 @@
 import click
 import os
-import shutil
-import json
-import konfchanger_utils as utils
+from konfchanger_utils import Utils
 
-current_path = utils.get_current_directory()
-config = os.path.join(current_path, '.konfchanger_default_config')
+utils = Utils()
 
-
-#@click.option('-c', '--config', 'config', default=config, type=click.Path())
 @click.group()
 @click.pass_context
 def konfchanger(ctx):
     '''This is a tool to backup/restore KDE configuration and styles.'''
 
-    click.echo('Checking for config file')
-    try:
-        ctx.ensure_object(dict)
-        with open(config, 'r') as cfg:
-            ctx.default_map = json.load(cfg)
-    except:
-        click.echo('config file doesnt not exist at '+config+'\n Either add a config file or pass a <path-to-config-file> using "-c" or "--config" flag')
-    else:
-        click.echo('Config file Found!!')
-    pass
-
-
-#@click.option('-c', '--config-path', 'config_path', type=click.Path())
-#@click.option('-cl', '--config-list-path', 'config_list_path', type=click.Path())
-@konfchanger.command('init')
-@click.pass_context
-def init_konfchanger(ctx):
-    config_list_path = utils.check_and_return_defaults(ctx, 'config_list_path', None)
-    utils.check_config_file(ctx, config_list_path)
-    config_path = utils.check_and_return_defaults(ctx, 'config_path', None)
-    if not os.path.isdir(config_path):
-        click.echo('Creating a backup folder at ' + config_path)
-        try:
-            os.mkdir(config_path)
-        except Exception as e:
-            click.echo('Could not create directory for config backup at ' + config_path)
-            click.echo(e)
-            ctx.abort()
-            return
-    else:
-        click.echo('Backup folder already exists at ' + config_path)
-        click.echo('You are good to go. Dont need to re-run init command again')
-
-
-@konfchanger.command()
-@click.option('--name', required=True, prompt='Please give a name to the current configuration backup!\nNOTE: <Spaces> in the name will be converted into "_"(underscore)')
-@click.pass_context
-def backup(ctx, name):
-    '''Backup current configuration'''
-
-    config_path = utils.get_value(ctx, 'config_path')
-    if not os.path.isdir(config_path):
-        click.echo('No backup folder found...\nPlease run the init command before backup')
+    if utils is None:
         ctx.abort()
-    fixed_name = name.replace(' ', '_')
-    backup_location = os.path.join(config_path, fixed_name)
-    configuration_exists = False
-    if os.path.isdir(backup_location):
-        click.echo('configuration backup with this name already exists')
-        configuration_exists = True
-    try:
-        if configuration_exists:
-            click.confirm('Do you want to overwrite the exisiting configuration backup?', abort=True)
-            shutil.rmtree(backup_location)
-        os.mkdir(backup_location)
-    except Exception as e:
-        click.echo('Error creating backup folder at ' + backup_location)
-        click.echo(e)
-    else:
-        utils.copy_configs(ctx, backup_location)
-        click.echo(name + ' Backup complete, with the folder name as ' + fixed_name)
+    utils.logger.log('Checking for Backup directory')
+    store_present = utils.is_store_dir_present()
+    if (ctx.invoked_subcommand != 'init') and (not store_present):
+        utils.logger.info('Please run "init" command for the first time using this tool')
+        ctx.abort()
 
+
+@konfchanger.command('init')
+@click.option('-v', '--verbose')
+@click.pass_context
+def init_konfigchanger(ctx, verbose):
+    config_list_path = utils.get_config_list_path()
+    store_dir = utils.get_store_dir()
+    error_code, error = utils.create_directory(store_dir)
+    if error_code == -1:
+        utils.logger.info('Backup folder already exists at ' + store_dir)
+        utils.logger.info('You are good to go. Dont need to run init command again')
+    elif error_code == 1:
+        utils.logger.info('Could not create directory for config backup at ' + store_dir)
+        utils.logger.info(e)
+    else:
+        utils.logger.log('Backup folder created successfully')
 
 
 @konfchanger.command()
+@click.option('-v', '--verbose')
 @click.option('--name')
 @click.pass_context
-def apply(ctx, name):
-    '''Apply a backed-up configuration'''
+def backup(ctx, name, verbose):
+    '''Backup current configuration'''
 
-    config_path, stored_configs = utils.get_list_configs(ctx, None, False)
-    if len(stored_configs) == 1:
-        click.echo('Only 1 config found....\nSo applying that config')
-        name = stored_configs[0]
-    else:
-        if (name is not None) & (name not in stored_configs):
-            click.echo(name + ' provided doesnt match with any existing saved configurations.\n Please select one from below:\n')
-        if not name or name not in stored_configs:
-            name = utils.get_config_name(stored_configs)
-    utils.create_backup(ctx)
-    utils.copy(ctx, name)
-    # send kwin reconfigure signal
-    click.echo(name + ' ---- Applied')
+    if not utils.is_config_list_path_present():
+        ctx.abort()
+    if name is None:
+        name = click.prompt('Please give a name to the current configuration backup!\nNOTE: <Spaces> in the name will be converted into "_"(underscore)', type=click.STRING)
+    fixed_name = name.replace(' ', '_')
+    configuration_exists = utils.is_duplicate_name_present(fixed_name)
+    absolute_path = utils.get_config_backup_absolute_path_by_name(fixed_name)
+    overwrite = False
+    if configuration_exists:
+        overwrite = click.confirm('Do you want to overwrite the exisiting configuration backup?', abort=True)
+        #utils.delete_location(absolute_path)
+        utils.logger.log(str(overwrite))
+        if not overwrite:
+            ctx.abort()
+    error_code, error = utils.create_directory(absolute_path, overwrite)
+    if error_code == 0:
+        if utils.copy_configs_to_store(absolute_path):
+            utils.logger.info('Some error occurred while backing up your configurations.')
+            utils.logger.info('Please use the delete command to delete this configurations backup if needed')
+        else:
+            utils.logger.info(name + ' Backup complete, You can apply this configuration by passing this name -> ' + fixed_name + ' with the --name flag for "apply" option')
+    elif error_code == 1:
+        utils.logger.info('Error creating backup folder at ' + absolute_path)
+        utils.logger.info(error)
+
 
 
 
 @konfchanger.command()
+@click.option('-v', '--verbose')
+@click.option('--name')
 @click.pass_context
-def list(ctx):
+def apply(ctx, name, verbose):
+    '''Apply a backed-up configuration'''
+
+    stored_configs = utils.get_stored_configs()
+    if stored_configs is None:
+        utils.logger.info('No backed up configuration packs present!!\nBackup folder is empty')
+        return
+    if stored_configs is None:
+        ctx.abort()
+    if len(stored_configs) == 1:
+        utils.logger.info('Only 1 configuration pack found!!')
+        name = stored_configs[0]
+        if not click.confirm('Do you want to apply '+ name + ' configuration pack?'):
+            ctx.abort()
+    else:
+        if (name is not None) and (name not in stored_configs):# if wrong name is provided
+            utils.logger.info(name + ' provided name doesnt match with any existing stored configurations.\n Please select one from below:\n')
+        if (Name is None) or (name not in stored_configs): #if no name is provided or wrong name is provided
+            name = utils.get_config_name()
+    utils.create_bak_file(ctx)
+    utils.copy_to_set_locations(ctx, name)
+    # send kwin reconfigure signal
+    utils.logger.info(name + ' ---- Applied')
+
+
+
+@konfchanger.command()
+@click.option('-v', '--verbose')
+@click.pass_context
+def list(ctx, verbose):
     '''List all available backed up configurations'''
-    utils.get_list_configs(ctx, None)
+    utils.logger.log('Listing existing configurations')
+    utils.get_stored_configs()
+    utils.echo_configs()
 
 
 #@click.option('-y','--yes')
 @konfchanger.command('delete')
 @click.option('-n', '--name')
+@click.option('-v', '--verbose')
 @click.pass_context
-def delete_configuration_backup(ctx, name):
+def delete_configuration_backup(ctx, name, verbose):
     '''Delete a backed-up configuration'''
 
-    config_path, configs = utils.get_list_configs(ctx, None, False)
-    if (name is not None) & (name not in configs):
-        click.echo(name + ' provided doesnt match with any existing saved configurations.\n Please select 1 from below:\n')
-    if not name or name not in configs:
-        name = utils.get_config_name(configs)
+    stored_configs = utils.get_stored_configs()
+    if stored_configs is None:
+        utils.logger.info('No backed up configuration packs present!!\nBackup folder is empty')
+        return
+    if (name is not None) and (name not in stored_configs): # if wrong name is provided
+        utils.logger.info(name + ' provided name doesnt match with any existing saved configurations.\n Please select 1 from below:\n')
+    if (name is None) or (name not in stored_configs): # if no name is provided or wrong name is provided
+        name = utils.get_config_name()
     if click.confirm('Do you really want to delete '+ name + ' configuration?', abort=True):
-        rem_config_path = os.path.join(utils.check_and_return_defaults(ctx, 'config_path', None), name)
-        shutil.rmtree(rem_config_path)
-        click.echo(name + ' configuration deleted!!')
+        rem_config_path = utils.get_config_backup_absolute_path_by_name(name)
+        utils.delete_location(rem_config_path)
+        utils.logger.info(name + ' configuration deleted!!')
