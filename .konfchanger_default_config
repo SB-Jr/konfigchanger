@@ -1,4 +1,4 @@
 {
-    "store_dir": "/home/sbjr/.konfchanger",
+    "store_dir": ".konfchanger",
     "config_list_path":  ".backup_locations"
 }

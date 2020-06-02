@@ -55,7 +55,7 @@ class Utils:
         konfigchanger_config = self.get_value('konfigchanger_config')
         with open(konfigchanger_config, 'r') as cfg:
             json_data = json.load(cfg)
-            self.__info_map['store_dir'] = json_data['store_dir']
+            self.__info_map['store_dir'] = os.path.join(self.get_home_path(), json_data['store_dir'])
             self.__info_map['config_list_path'] = json_data['config_list_path']
 
 
@@ -256,8 +256,8 @@ class Utils:
         '''Copy the stored configuration to the specific locations'''
 
         default_locations = self.__get_source_paths()
-        config_path = self.get_value('store_dir')
-        source_path = os.path.join(config_path, stored_config_name)
+        store_dir = self.get_value('store_dir')
+        source_path = os.path.join(store_dir, stored_config_name)
         any_error = False
         src = [stored_config for stored_config in os.listdir(source_path)]
         for config in src:

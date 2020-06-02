@@ -1,29 +1,29 @@
 #basic plasma theme info
-/home/sbjr/.config/kdeglobals
-/home/sbjr/.config/kwinrc
-/home/sbjr/.config/kscreenlockerrc
-/home/sbjr/.config/plasma-org.kde.plasma.desktop-appletsrc
-/home/sbjr/.config/plasmarc
-/home/sbjr/.config/plasmashellrc
+.config/kdeglobals
+.config/kwinrc
+.config/kscreenlockerrc
+.config/plasma-org.kde.plasma.desktop-appletsrc
+.config/plasmarc
+.config/plasmashellrc
 
 #font info
-/home/sbjr/.config/fontconfig
+.config/fontconfig
 
 #gtk2 info
-/home/sbjr/.config/gtk-2.0
-/home/sbjr/.config/gtkrc-2.0
-/home/sbjr/.gtkrc-2.0
+.config/gtk-2.0
+.config/gtkrc-2.0
+.gtkrc-2.0
 
 #gtk3 info
-/home/sbjr/.config/gtk-3.0
-/home/sbjr/.config/gtkrc
+.config/gtk-3.0
+.config/gtkrc
 
 #cursor theme
-/home/sbjr/.icons/cursor.theme
-/home/sbjr/.config/kcminputrc
+.icons/cursor.theme
+.config/kcminputrc
 
 #konsole
-#/home/sbjr/.local/share/konsole/ZSH Profile.profile
+#.local/share/konsole/ZSH Profile.profile
 
 #atom
-/home/sbjr/.atom/config.cson
+.atom/config.cson
