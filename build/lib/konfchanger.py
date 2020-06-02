@@ -4,8 +4,7 @@ import shutil
 import json
 import konfchanger_utils as utils
 
-home_path = os.getenv('HOME')
-current_path = os.getcwd()
+current_path = utils.get_current_directory()
 config = os.path.join(current_path, '.konfchanger_default_config')
 
 
@@ -39,9 +38,9 @@ def init_konfchanger(ctx):
         click.echo('Creating a backup folder at ' + config_path)
         try:
             os.mkdir(config_path)
-        except error:
+        except Exception as e:
             click.echo('Could not create directory for config backup at ' + config_path)
-            click.echo(error)
+            click.echo(e)
             ctx.abort()
             return
     else:
@@ -70,12 +69,12 @@ def backup(ctx, name):
             click.confirm('Do you want to overwrite the exisiting configuration backup?', abort=True)
             shutil.rmtree(backup_location)
         os.mkdir(backup_location)
-    except error:
+    except Exception as e:
         click.echo('Error creating backup folder at ' + backup_location)
-        click.echo(error)
+        click.echo(e)
     else:
-        click.echo(
-            name + ' Backup complete, with the folder name as ' + fixed_name)
+        utils.copy_configs(ctx, backup_location)
+        click.echo(name + ' Backup complete, with the folder name as ' + fixed_name)
 
 
 
@@ -85,11 +84,17 @@ def backup(ctx, name):
 def apply(ctx, name):
     '''Apply a backed-up configuration'''
 
-    config_path, configs = utils.get_list_configs(ctx, None, False)
-    if (name is not None) & (name not in configs):
-        click.echo(name + ' provided doesnt match with any existing saved configurations.\n Please select one from below:\n')
-    if not name or name not in configs:
-        name = utils.get_config_name(configs)
+    config_path, stored_configs = utils.get_list_configs(ctx, None, False)
+    if len(stored_configs) == 1:
+        click.echo('Only 1 config found....\nSo applying that config')
+        name = stored_configs[0]
+    else:
+        if (name is not None) & (name not in stored_configs):
+            click.echo(name + ' provided doesnt match with any existing saved configurations.\n Please select one from below:\n')
+        if not name or name not in stored_configs:
+            name = utils.get_config_name(stored_configs)
+    utils.create_backup(ctx)
+    utils.copy(ctx, name)
     # send kwin reconfigure signal
     click.echo(name + ' ---- Applied')
 
