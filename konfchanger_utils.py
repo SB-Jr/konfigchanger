@@ -223,7 +223,7 @@ class Utils:
     def create_bak_file(self, ctx):
         '''Creates backup for the current source configurations for which no backup exists'''
 
-        source_paths = self.__get_source_paths(ctx)
+        source_paths = self.__get_source_paths()
         no_bk_list = self.__bak_file_exists(source_paths)
         if len(no_bk_list) == 0:
             return
@@ -243,7 +243,7 @@ class Utils:
     def copy_to_set_locations(self, ctx, stored_config_name):
         '''Copy the stored configuration to the specific locations'''
 
-        default_locations = self.__get_source_paths(ctx)
+        default_locations = self.__get_source_paths()
         config_path = self.get_value('store_dir')
         source_path = os.path.join(config_path, stored_config_name)
         any_error = False
