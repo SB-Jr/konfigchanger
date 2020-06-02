@@ -1,10 +1,11 @@
 Metadata-Version: 1.0
 Name: konfchanger
 Version: 0.1
-Summary: UNKNOWN
+Summary: A CLI tool to backup/restore configuration files
 Home-page: UNKNOWN
-Author: UNKNOWN
-Author-email: UNKNOWN
+Author: Shrijit Basak(SB-Jr)
+Author-email: shrijitbasak@gmail.com
 License: UNKNOWN
 Description: UNKNOWN
+Keywords: backup restore configuration config files
 Platform: UNKNOWN
