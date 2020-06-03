@@ -26,19 +26,23 @@ class Utils:
         self.__info_map = MyDict()
         self.logger = MyDict()
         self.__set_info_logger()
+        self.__set_error_logger()
 
         self.__set_home_dir()
         self.__set_current_directory()
 
         self.__set_kconfigchanger_config_dir()
-        self.__set_verbose(False)
+        self.__set_verbose_logger(False)
         if not self.is_konfigchanger_config_present():
             return
         self.__load_konfigchanger_config_file()
         pass
 
-    def __set_info_logger(self):
-        self.logger.info = click.echo
+    def __identity(*args, **args1):
+        pass
+
+    def __set_info_logger(self, flag=True):
+        self.logger.info = click.echo if flag else self.__identity
 
     def __set_home_dir(self):
         self.__info_map.home_dir = os.getenv('HOME')
@@ -64,18 +68,26 @@ class Utils:
     def __set_kconfigchanger_config_dir(self):
         self.__info_map.konfigchanger_config_dir = os.path.join(self.get_home_path(), KONFIGCHANGER_CONFIG_DIR_PATH)
 
-    def __set_verbose(self, verbose):
+    def __set_verbose_logger(self, verbose):
         """Set verbose function to print verbose statements if verbose flag is set"""
-
-        def identity(*args, **args1):
-            pass
         def echo_log_tag(arg):
             click.echo('[LOG] '+arg)
 
-        self.logger.log = echo_log_tag if verbose else identity
+        self.logger.log = echo_log_tag if verbose else self.__identity
+
+    def __set_error_logger(self, flag=True):
+        def echo_error(arg):
+            click.secho('[ERROR] ' + arg, fg='bright_red', err=True)
+        self.logger.error = echo_error if flag else self.__identity
 
     def enable_verbose(self, ctx, flag_name, enable_flag=False):
-        self.__set_verbose(enable_flag)
+        self.__set_verbose_logger(enable_flag)
+
+    def disable_error_log(self):
+        self.__set_error_logger(False)
+
+    def disable_info_log(self):
+        self.__set_info_logger(False)
 
     def get_home_path(self):
         return self.get_value('home_dir')
@@ -105,8 +117,8 @@ class Utils:
             self.logger.log(
                 'Please create a '+DEFAULT_CONFIG_FILE_NAME+' file in this directory:' + path)
             self.logger.log('It should contain the following {\n' +
-                             '"store_dir":"<full_path_to_a_location_to_store_backups>",' +
-                             '"config_list_path":"<path_to_a_file_containing_list_of_config_files_to_backup>"' +
+                             '"store_dir":"<relative_to_home_path_to_a_location_to_store_backups>",' +
+                             '"config_list_path":"<reliative_to_home_path_to_a_file_containing_list_of_config_files_to_backup>"' +
                              '}')
             return False
         else:
@@ -225,8 +237,8 @@ class Utils:
             try:
                 call(['cp', '-a', source_path, dest])
             except Exception as e:
-                self.logger.info('Following error occurred:')
-                self.logger.info(e)
+                self.logger.error('Following error occurred:')
+                self.logger.error(e)
                 error_occurred = True
         return error_occurred
 
@@ -280,7 +292,7 @@ class Utils:
             self.__load_konfigchanger_config_file()
         except Exception as error:
             error_code = 1
-            self.logger.info('Error occured when copying default configurations at location '+config_dir)
+            self.logger.error('Error occured when copying default configurations at location '+config_dir)
             return error_code, error
         return error_code, None
 
@@ -304,9 +316,9 @@ class Utils:
             error_code = call(['cp', '-a', source_location, associated_path])
             if error_code != 0:
                 any_error = True
-                self.logger.info('Issue copying ' + source_location + ' into ' + associated_path)
+                self.logger.error('Error while copying ' + source_location + ' into ' + associated_path)
         if any_error:
-            self.logger.info('Encountered error while applying 1 or more configurations....\nSo aborting')
+            self.logger.error('Encountered error while applying 1 or more configurations....\nSo aborting')
             ctx.abort()
 
     def __get_associated_path(self, config: str, config_paths: list) -> str:

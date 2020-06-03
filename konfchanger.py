@@ -41,8 +41,8 @@ def init_konfigchanger(ctx, verbose):
     if error_code == -1:
         utils.logger.info('konfigchanger config folder already exists at ' + config_dir)
     elif error_code == 1:
-        utils.logger.info('Could not create directory for konfigchanger\'s config at ' + config_dir)
-        utils.logger.info(error)
+        utils.logger.error('Could not create directory for konfigchanger\'s config at ' + config_dir)
+        utils.logger.error(error)
         return 1
     else:
         utils.logger.log('konfigchanger config folder created successfully at '+ config_dir)
@@ -53,8 +53,8 @@ def init_konfigchanger(ctx, verbose):
         utils.logger.info('Backup folder already exists at ' + store_dir)
         utils.logger.info('You are good to go. Don\'t need to run init command again')
     elif error_code == 1:
-        utils.logger.info('Could not create directory for backup at ' + store_dir)
-        utils.logger.info(error)
+        utils.logger.error('Could not create directory for backup at ' + store_dir)
+        utils.logger.error(error)
         return 1
     else:
         utils.logger.log('Backup folder created successfully')
@@ -91,15 +91,15 @@ def backup(ctx, name, verbose):
     error_code, error = utils.create_directory(absolute_path, overwrite)
     if error_code == 0:
         if utils.copy_configs_to_store(absolute_path):
-            utils.logger.info('Some error occurred while backing up your configurations.')
+            utils.logger.error('Some error occurred while backing up your configurations.')
             utils.logger.info('Please use the delete command to delete this configurations backup if needed')
         else:
             utils.logger.info(
                 name + ' Backup complete, You can apply this configuration by passing this name -> ' + fixed_name + ' with the --name flag for "apply" option')
             return 0
     elif error_code == 1:
-        utils.logger.info('Error creating backup folder at ' + absolute_path)
-        utils.logger.info(error)
+        utils.logger.error('Error creating backup folder at ' + absolute_path)
+        utils.logger.error(error)
         return 1
 
 
