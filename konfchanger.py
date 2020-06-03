@@ -104,7 +104,7 @@ def backup(ctx, name, overwrite, verbose):
 
 @konfchanger.command()
 @click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True, help='If provied, will print verbose logs')
-@click.option('--name')
+@click.option('--name', 'name', type=click.STRING, help='The name to be assigned to the backed up configuration pack')
 # TODO: implement post apply hook flag
 @click.pass_context
 def apply(ctx, name, verbose):
@@ -148,7 +148,7 @@ def list(ctx, verbose):
 
 # @click.option('-y','--yes')
 @konfchanger.command('delete')
-@click.option('-n', '--name')
+@click.option('--name', 'name', type=click.STRING, help='The name to be assigned to the backed up configuration pack')
 @click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True, help='If provied, will print verbose logs')
 # TODO: implement yes flag
 @click.pass_context
