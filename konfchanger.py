@@ -146,13 +146,12 @@ def list(ctx, verbose):
     return 0
 
 
-# @click.option('-y','--yes')
 @konfchanger.command('delete')
 @click.option('--name', 'name', type=click.STRING, help='The name to be assigned to the backed up configuration pack')
 @click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True, help='If provied, will print verbose logs')
-# TODO: implement yes flag
+@click.option('--yes', 'yes', is_flag=True, help='If provided then confirmation to delete a configuration backup wont be asked')
 @click.pass_context
-def delete_configuration_backup(ctx, name, verbose):
+def delete_configuration_backup(ctx, name, yes, verbose):
     """Delete a backed-up configuration"""
 
     stored_configs = utils.get_stored_config_name_list()
@@ -164,7 +163,7 @@ def delete_configuration_backup(ctx, name, verbose):
             name + ' provided name doesnt match with any existing saved configurations.\n Please select 1 from below:\n')
     if (name is None) or (name not in stored_configs):  # if no name is provided or wrong name is provided
         name = utils.get_config_name()
-    if click.confirm('Do you really want to delete ' + name + ' configuration?', abort=True):
+    if yes or click.confirm('Do you really want to delete ' + name + ' configuration?', abort=True):
         rem_config_path = utils.get_config_backup_absolute_path_by_name(name)
         utils.delete_location(rem_config_path)
         utils.logger.info(name + ' configuration deleted!!')
