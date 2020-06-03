@@ -20,12 +20,11 @@ def konfchanger(ctx):
     """This is a tool to backup/restore KDE configuration and styles."""
 
     if utils is None:
-        ctx.abort()
+        return 1
     utils.logger.log('Checking for Backup directory')
     store_present = utils.is_konfigchanger_config_present() and utils.is_store_dir_present()
     if (ctx.invoked_subcommand != 'init') and (not store_present):
         utils.logger.info('Please run "init" command for the first time using this tool')
-        ctx.abort()
         return 1
     return 0
 
@@ -52,13 +51,14 @@ def init_konfigchanger(ctx, verbose):
     if error_code == -1:
         utils.logger.info('Backup folder already exists at ' + store_dir)
         utils.logger.info('You are good to go. Don\'t need to run init command again')
+        return 0
     elif error_code == 1:
         utils.logger.error('Could not create directory for backup at ' + store_dir)
         utils.logger.error(error)
         return 1
     else:
         utils.logger.log('Backup folder created successfully')
-    return 0
+        return 0
 
 
 @konfchanger.command()
@@ -71,10 +71,10 @@ def backup(ctx, name, overwrite, verbose):
     """Backup current configuration"""
 
     if not utils.is_backup_list_file_present():
-        ctx.abort()
+        return 1
     if name is None:
         name = click.prompt(
-            'Please give a name to the current configuration backup! \nNOTE:Name starting with "." will be eliminated',
+            'Please give a name to the current configuration backup! \nNOTE:If the Name starts with ".", "." will be eliminated',
             type=click.STRING)
     fixed_name = name.strip()
     if fixed_name.startswith('.'):
@@ -83,15 +83,15 @@ def backup(ctx, name, overwrite, verbose):
     absolute_path = utils.get_config_backup_absolute_path_by_name(fixed_name)
     if (overwrite is False) and (configuration_exists):
         overwrite = click.confirm('Do you want to overwrite the exisiting configuration backup?', abort=True)
-        # utils.delete_location(absolute_path)
         utils.logger.log('Overwrite choice by user:' + str(overwrite))
         if not overwrite:
-            ctx.abort()
+            return 0
     error_code, error = utils.create_directory(absolute_path, overwrite)
     if error_code == 0:
         if utils.copy_configs_to_store(absolute_path):
             utils.logger.error('Some error occurred while backing up your configurations.')
             utils.logger.info('Please use the delete command to delete this configurations backup if needed')
+            return 1
         else:
             utils.logger.info(
                 name + ' Backup complete, You can apply this configuration by passing this name -> "' + fixed_name + '" with the --name flag for "apply" option')
@@ -113,15 +113,14 @@ def apply(ctx, name, verbose):
     stored_configs = utils.get_stored_config_name_list()
     if stored_configs is None:
         utils.logger.info('No backed up configuration packs present!!\nBackup folder is empty')
-        return
+        return 0
     if stored_configs is None:
-        ctx.abort()
+        return 0
     if len(stored_configs) == 1:
         utils.logger.info('Only 1 configuration pack found!!')
         name = stored_configs[0]
         if not click.confirm('Do you want to apply ' + name + ' configuration pack?'):
-            ctx.abort()
-            return 1
+            return 0
     else:
         if (name is not None) and (name not in stored_configs):  # if wrong name is provided
             utils.logger.info(
@@ -157,7 +156,6 @@ def delete_configuration_backup(ctx, name, yes, verbose):
     stored_configs = utils.get_stored_config_name_list()
     if stored_configs is None:
         utils.logger.info('No backed up configuration packs present!!\nBackup folder is empty')
-        return 1
     if (name is not None) and (name not in stored_configs):  # if wrong name is provided
         utils.logger.info(
             name + ' provided name doesnt match with any existing saved configurations.\n Please select 1 from below:\n')
@@ -167,4 +165,4 @@ def delete_configuration_backup(ctx, name, yes, verbose):
         rem_config_path = utils.get_config_backup_absolute_path_by_name(name)
         utils.delete_location(rem_config_path)
         utils.logger.info(name + ' configuration deleted!!')
-        return 0
+    return 0
