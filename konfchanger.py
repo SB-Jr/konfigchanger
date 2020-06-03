@@ -103,7 +103,7 @@ def backup(ctx, name, overwrite, verbose):
 
 
 @konfchanger.command()
-@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True)
+@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True, help='If provied, will print verbose logs')
 @click.option('--name')
 # TODO: implement post apply hook flag
 @click.pass_context
@@ -136,7 +136,7 @@ def apply(ctx, name, verbose):
 
 
 @konfchanger.command()
-@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True)
+@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True, help='If provied, will print verbose logs')
 @click.pass_context
 def list(ctx, verbose):
     """List all available backed up configurations"""
@@ -149,7 +149,7 @@ def list(ctx, verbose):
 # @click.option('-y','--yes')
 @konfchanger.command('delete')
 @click.option('-n', '--name')
-@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True)
+@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True, help='If provied, will print verbose logs')
 # TODO: implement yes flag
 @click.pass_context
 def delete_configuration_backup(ctx, name, verbose):
