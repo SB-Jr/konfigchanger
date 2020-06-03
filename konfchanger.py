@@ -62,12 +62,12 @@ def init_konfigchanger(ctx, verbose):
 
 
 @konfchanger.command()
-@click.option('-n', '--name', 'name', type=click.STRING)
-@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True)
-# TODO: implement overwrite_existing flag
+@click.option('--name', 'name', type=click.STRING, help='The name to be assigned to the backed up configuration pack')
+@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True, help='If provied, will print verbose logs')
+@click.option('--overwrite-existing', 'overwrite', is_flag=True, help='If provided, will overwrite existing configuration pack if provided name matches')
 # TODO: implement post backup hook flag
 @click.pass_context
-def backup(ctx, name, verbose):
+def backup(ctx, name, overwrite, verbose):
     """Backup current configuration"""
 
     if not utils.is_backup_list_file_present():
@@ -81,11 +81,10 @@ def backup(ctx, name, verbose):
         fixed_name = fixed_name[1:]
     configuration_exists = utils.is_duplicate_name_present_in_store(fixed_name)
     absolute_path = utils.get_config_backup_absolute_path_by_name(fixed_name)
-    overwrite = False
-    if configuration_exists:
+    if (overwrite is False) and (configuration_exists):
         overwrite = click.confirm('Do you want to overwrite the exisiting configuration backup?', abort=True)
         # utils.delete_location(absolute_path)
-        utils.logger.log(str(overwrite))
+        utils.logger.log('Overwrite choice by user:' + str(overwrite))
         if not overwrite:
             ctx.abort()
     error_code, error = utils.create_directory(absolute_path, overwrite)
@@ -95,7 +94,7 @@ def backup(ctx, name, verbose):
             utils.logger.info('Please use the delete command to delete this configurations backup if needed')
         else:
             utils.logger.info(
-                name + ' Backup complete, You can apply this configuration by passing this name -> ' + fixed_name + ' with the --name flag for "apply" option')
+                name + ' Backup complete, You can apply this configuration by passing this name -> "' + fixed_name + '" with the --name flag for "apply" option')
             return 0
     elif error_code == 1:
         utils.logger.error('Error creating backup folder at ' + absolute_path)
