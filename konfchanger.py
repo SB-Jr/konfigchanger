@@ -9,7 +9,6 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 import click
-import os
 from konfchanger_utils import Utils
 
 utils = Utils()
@@ -32,7 +31,7 @@ def konfchanger(ctx):
 
 
 @konfchanger.command('init')
-@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose)
+@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True)
 @click.pass_context
 def init_konfigchanger(ctx, verbose):
     """RUN THIS COMMAND FOR THE FIRST TIME BEFORE USING THIS CLI"""
@@ -63,9 +62,8 @@ def init_konfigchanger(ctx, verbose):
 
 
 @konfchanger.command()
-@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose)
-@click.option('--name')
-# TODO: Check --name flag
+@click.option('-n', '--name', 'name', type=click.STRING)
+@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True)
 # TODO: implement overwrite_existing flag
 # TODO: implement post backup hook flag
 @click.pass_context
@@ -106,9 +104,8 @@ def backup(ctx, name, verbose):
 
 
 @konfchanger.command()
-@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose)
+@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True)
 @click.option('--name')
-# TODO: check name flag
 # TODO: implement post apply hook flag
 @click.pass_context
 def apply(ctx, name, verbose):
@@ -140,7 +137,7 @@ def apply(ctx, name, verbose):
 
 
 @konfchanger.command()
-@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose)
+@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True)
 @click.pass_context
 def list(ctx, verbose):
     """List all available backed up configurations"""
@@ -153,8 +150,8 @@ def list(ctx, verbose):
 # @click.option('-y','--yes')
 @konfchanger.command('delete')
 @click.option('-n', '--name')
-# TODO: check name flag
-@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose)
+@click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose, is_eager=True)
+# TODO: implement yes flag
 @click.pass_context
 def delete_configuration_backup(ctx, name, verbose):
     """Delete a backed-up configuration"""

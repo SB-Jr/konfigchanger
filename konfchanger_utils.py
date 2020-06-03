@@ -69,8 +69,10 @@ class Utils:
 
         def identity(*args, **args1):
             pass
+        def echo_log_tag(arg):
+            click.echo('[LOG] '+arg)
 
-        self.logger.log = click.echo if verbose else identity
+        self.logger.log = echo_log_tag if verbose else identity
 
     def enable_verbose(self, ctx, flag_name, enable_flag=False):
         self.__set_verbose(enable_flag)
