@@ -22,9 +22,9 @@ setuptools.setup(
     keywords='backup restore configuration config files',
     url='https://github.com/SB-Jr/konfigchanger',
     classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GNU Public Licence 3",
-        "Operating System :: Linux",
+        "Programming Language :: Python :: 3.7",
+        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+        "Operating System :: POSIX :: Linux",
     ],
     python_requires='>=3.7.7'
 )
