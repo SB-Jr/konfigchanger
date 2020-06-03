@@ -15,22 +15,26 @@ import json
 from subprocess import call
 
 BAK_FILE_EXTENSION = '.bak'
+KONFIGCHANGER_CONFIG_DIR_PATH: str = '.config/konfigchanger_config'
+DEFAULT_BACKUP_LIST_FILE_NAME = 'backup_locations'
+DEFAULT_CONFIG_FILE_NAME = 'konfchanger_default_config'
 
 
 class Utils:
 
     def __init__(self):
-        self.__info_map = My_Dict()
-        self.logger = My_Dict()
-
+        self.__info_map = MyDict()
+        self.logger = MyDict()
         self.__set_info_logger()
+
         self.__set_home_dir()
         self.__set_current_directory()
-        self.__set_konfigchanger_config()
+
+        self.__set_kconfigchanger_config_dir()
         self.__set_verbose(False)
         if not self.is_konfigchanger_config_present():
-            return None
-        self.__load_konfigchanger_config()
+            return
+        self.__load_konfigchanger_config_file()
         pass
 
     def __set_info_logger(self):
@@ -42,19 +46,23 @@ class Utils:
     def __set_current_directory(self):
         self.__info_map.current_dir = os.getcwd()
 
-    def __set_konfigchanger_config(self):
-        current_path = self.get_current_directory()
-        self.__info_map.konfigchanger_config = os.path.join(current_path, '.konfchanger_default_config')
+    def __set_konfigchanger_config_path(self):
+        self.__info_map.konfigchanger_config = os.path.join(self.get_konfig_config_dir_path(), DEFAULT_CONFIG_FILE_NAME)
 
-    def __load_konfigchanger_config(self):
+    def __load_konfigchanger_config_file(self):
         konfigchanger_config = self.get_value('konfigchanger_config')
         with open(konfigchanger_config, 'r') as cfg:
             json_data = json.load(cfg)
-            self.__info_map['store_dir'] = os.path.join(self.get_home_path(), json_data['store_dir'])
-            self.__info_map['config_list_path'] = json_data['config_list_path']
+            self.__info_map.store_dir = os.path.join(self.get_home_path(), json_data['store_dir'])
+            self.logger.log('Found Bacup folder location')
+            self.__info_map['config_list_path'] = os.path.join(self.get_home_path(), json_data['config_list_path'])
+            self.logger.log('Found configuration list file')
 
     def __set_stored_config_list(self, stored_configs):
         self.__info_map.store_config_list = stored_configs
+
+    def __set_kconfigchanger_config_dir(self):
+        self.__info_map.konfigchanger_config_dir = os.path.join(self.get_home_path(), KONFIGCHANGER_CONFIG_DIR_PATH)
 
     def __set_verbose(self, verbose):
         """Set verbose function to print verbose statements if verbose flag is set"""
@@ -70,37 +78,48 @@ class Utils:
     def get_home_path(self):
         return self.get_value('home_dir')
 
-    def get_current_directory(self):
+    def get_current_directory_path(self):
         return self.get_value('current_dir')
 
-    def get_konfigchanger_config(self):
+    def get_konfigchanger_config_file_path(self):
         return self.get_value('konfigchanger_config')
 
-    def get_config_list_path(self):
+    def get_backup_list_file_path(self):
         return self.get_value('config_list_path')
 
+    def get_konfig_config_dir_path(self):
+        return self.get_value('konfigchanger_config_dir')
+
     def is_konfigchanger_config_present(self):
-        path = self.get_value('konfigchanger_config')
+        konfig_config_path = self.get_konfig_config_dir_path()
+        if not os.path.isdir(konfig_config_path):
+            self.logger.log('.konfchanger_config directory does not exist at ' + konfig_config_path)
+            return False
+        else:
+            self.logger.log('.konfigchanger_config directory found at '+konfig_config_path)
+        path = os.path.join(konfig_config_path, DEFAULT_CONFIG_FILE_NAME)
         if not os.path.isfile(path):
-            self.logger.info('.konfchanger_default_config file doesnt not exist at ' + path)
-            self.logger.info(
-                'please create a .konfchanger_default_config file in this directory:' + self.get_current_directory())
-            self.logger.info('It should contain the following \{\n' +
+            self.logger.log(DEFAULT_CONFIG_FILE_NAME + ' file doesnt not exist at ' + path)
+            self.logger.log(
+                'Please create a '+DEFAULT_CONFIG_FILE_NAME+' file in this directory:' + path)
+            self.logger.log('It should contain the following {\n' +
                              '"store_dir":"<full_path_to_a_location_to_store_backups>",' +
                              '"config_list_path":"<path_to_a_file_containing_list_of_config_files_to_backup>"' +
-                             '\}')
+                             '}')
             return False
         else:
             self.logger.log('Config file Found!!')
+            self.__info_map.konfigchanger_config = path
             return True
 
-    def is_config_list_path_present(self):
-        '''Check if the file containing list to other configuration file to be backed up is present or not'''
+    def is_backup_list_file_present(self):
+        """Check if the file containing list to other configuration file to be backed up is present or not"""
 
         path = self.get_value('config_list_path')
         if not os.path.isfile(path):
             self.logger.info('Configuration List providing file not present at ' + path)
-            self.logger.info('Create a file at the above location with following contents:')
+            self.logger.info('Please run "init" command again!!')
+            self.logger.info('OR Create a file at the above location with following contents:')
             self.logger.info(
                 '<relative_to_home_path_to_config_file_1>\n<relative_to_home_path_to_config_file_2>\n:\n<relative_to_home_path_to_config_file_n>')
             self.logger.info('any location which starts with a "#" will be ignored')
@@ -120,7 +139,7 @@ class Utils:
             self.logger.log('Found Backup directory')
             return True
 
-    def is_duplicate_name_present(self, name):
+    def is_duplicate_name_present_in_store(self, name):
         name_path = os.path.join(self.get_store_dir(), name)
         if os.path.isdir(name_path):
             self.logger.info('configuration backup with this name already exists')
@@ -135,7 +154,7 @@ class Utils:
             return self.__info_map[key]
         return None
 
-    def get_stored_configs(self):
+    def get_stored_config_name_list(self):
         """Gets the list of stored configurations from store folder"""
 
         store_dir = self.get_value('store_dir')
@@ -154,7 +173,7 @@ class Utils:
         return self.get_value('store_dir')
 
     def get_config_name(self):
-        """Gives user the list of stored configs prvided in parameter and lets them choose one from the list"""
+        """Gives user the list of stored configs provided in parameter and lets them choose one from the list"""
 
         self.echo_configs()
         stored_configs = self.get_value('store_config_list')
@@ -179,7 +198,7 @@ class Utils:
         for i in range(1, no_configs + 1):
             self.logger.info('[' + str(i) + '] ' + stored_configs[i - 1])
 
-    def __get_source_paths(self):
+    def __get_backup_source_paths(self):
         """Get the list of configuration source paths from where we have to backup/copy configurations"""
 
         home_path = self.get_home_path()
@@ -198,7 +217,7 @@ class Utils:
     def copy_configs_to_store(self, dest):
         """Copy the current configurations mentioned into a store-configuration folder"""
 
-        source_path_list = self.__get_source_paths()
+        source_path_list = self.__get_backup_source_paths()
         error_occurred = False
         for source_path in source_path_list:
             try:
@@ -224,7 +243,7 @@ class Utils:
     def create_bak_file(self, ctx):
         """Creates backup for the current source configurations for which no backup exists"""
 
-        source_paths = self.__get_source_paths()
+        source_paths = self.__get_backup_source_paths()
         no_bk_list = self.__bak_file_exists(source_paths)
         if len(no_bk_list) == 0:
             return
@@ -241,10 +260,33 @@ class Utils:
             self.logger.info('There was error creating backup for 1 or more configurations\nSo aborting....')
             ctx.abort()
 
+    def copy_default_configurations(self):
+        """Copies the konfigchanger's config and default list of config locations to .config/'KONFIGCHANGER_CONFIG_DIR_PATH'
+        :rtype: int, object
+        """
+        error_code = 0
+        config_dir = self.get_konfig_config_dir_path()
+        default_backup_file_path = os.path.join(self.get_current_directory_path(), DEFAULT_BACKUP_LIST_FILE_NAME)
+        default_config_file_path = os.path.join(self.get_current_directory_path(), DEFAULT_CONFIG_FILE_NAME)
+        try:
+            call(['cp', '-a', default_backup_file_path, config_dir])
+            self.logger.log('Successfully copied default list of configuration file at '+ config_dir)
+            call(['cp', '-a', default_config_file_path, config_dir])
+            self.logger.log('Sucessfully copied default configuration file at '+config_dir)
+            self.logger.info('Successfully created default configuration!!')
+            self.__info_map.konfigchanger_config = os.path.join(config_dir, DEFAULT_CONFIG_FILE_NAME)
+            self.__load_konfigchanger_config_file()
+        except Exception as error:
+            error_code = 1
+            self.logger.info('Error occured when copying default configurations at location '+config_dir)
+            return error_code, error
+        return error_code, None
+
+
     def copy_to_set_locations(self, ctx, stored_config_name):
         """Copy the stored configuration to the specific locations"""
 
-        default_locations = self.__get_source_paths()
+        default_locations = self.__get_backup_source_paths()
         store_dir = self.get_value('store_dir')
         source_path = os.path.join(store_dir, stored_config_name)
         any_error = False
@@ -265,19 +307,30 @@ class Utils:
             self.logger.info('Encountered error while applying 1 or more configurations....\nSo aborting')
             ctx.abort()
 
-    def __get_associated_path(self, config, config_paths):
+    def __get_associated_path(self, config: str, config_paths: list) -> str:
+        """
+        Returns a
+
+        :rtype: str
+        """
         for config_path in config_paths:
             if config in config_path:
                 return config_path
 
-    def delete_location(self, location):
+    def delete_location(self, location: str) -> None:
+        """
+
+        :param location: str
+        :rtype: None
+        """
         shutil.rmtree(location)
 
     def create_directory(self, location, overwrite=False):
         """Creates directory at said location:
-            return 1: if error occurred while creating directory
-                   0: if directory created successfully
-                  -1: if directory already exists and overwrite flag was False"""
+
+        :rtype 1: if error occurred while creating directory
+               0: if directory created successfully
+              -1: if directory already exists and overwrite flag was False"""
 
         if os.path.exists(location):
             self.logger.log('Folder at ' + location + ' already exists')
@@ -292,8 +345,9 @@ class Utils:
             return 1, error
 
 
-class My_Dict(dict):
+class MyDict(dict):
     """My own dictionary implementation to use dictionary both as a dict and like an object interchangeably"""
 
     def __init__(self):
+        super().__init__()
         self.__dict__ = self

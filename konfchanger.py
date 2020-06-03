@@ -23,7 +23,7 @@ def konfchanger(ctx):
     if utils is None:
         ctx.abort()
     utils.logger.log('Checking for Backup directory')
-    store_present = utils.is_store_dir_present()
+    store_present = utils.is_konfigchanger_config_present() and utils.is_store_dir_present()
     if (ctx.invoked_subcommand != 'init') and (not store_present):
         utils.logger.info('Please run "init" command for the first time using this tool')
         ctx.abort()
@@ -35,15 +35,26 @@ def konfchanger(ctx):
 @click.option('-v', '--verbose', is_flag=True, callback=utils.enable_verbose)
 @click.pass_context
 def init_konfigchanger(ctx, verbose):
-    config_list_path = utils.get_config_list_path()
-    store_dir = utils.get_store_dir()
-    error_code, error = utils.create_directory(store_dir)
+    """RUN THIS COMMAND FOR THE FIRST TIME BEFORE USING THIS CLI"""
+    config_dir = utils.get_konfig_config_dir_path()
+    error_code, error = utils.create_directory(config_dir)
     # TODO: copy default "locations" file to .config/konfigchanger
     if error_code == -1:
-        utils.logger.info('Backup folder already exists at ' + store_dir)
-        utils.logger.info('You are good to go. Dont need to run init command again')
+        utils.logger.info('konfigchanger config folder already exists at ' + config_dir)
     elif error_code == 1:
-        utils.logger.info('Could not create directory for config backup at ' + store_dir)
+        utils.logger.info('Could not create directory for konfigchanger\'s config at ' + config_dir)
+        utils.logger.info(error)
+        return 1
+    else:
+        utils.logger.log('konfigchanger config folder created successfully at '+ config_dir)
+    utils.copy_default_configurations()
+    store_dir = utils.get_store_dir()
+    error_code, error = utils.create_directory(store_dir)
+    if error_code == -1:
+        utils.logger.info('Backup folder already exists at ' + store_dir)
+        utils.logger.info('You are good to go. Don\'t need to run init command again')
+    elif error_code == 1:
+        utils.logger.info('Could not create directory for backup at ' + store_dir)
         utils.logger.info(error)
         return 1
     else:
@@ -61,7 +72,7 @@ def init_konfigchanger(ctx, verbose):
 def backup(ctx, name, verbose):
     """Backup current configuration"""
 
-    if not utils.is_config_list_path_present():
+    if not utils.is_backup_list_file_present():
         ctx.abort()
     if name is None:
         name = click.prompt(
@@ -70,7 +81,7 @@ def backup(ctx, name, verbose):
     fixed_name = name.strip()
     if fixed_name.startswith('.'):
         fixed_name = fixed_name[1:]
-    configuration_exists = utils.is_duplicate_name_present(fixed_name)
+    configuration_exists = utils.is_duplicate_name_present_in_store(fixed_name)
     absolute_path = utils.get_config_backup_absolute_path_by_name(fixed_name)
     overwrite = False
     if configuration_exists:
@@ -103,7 +114,7 @@ def backup(ctx, name, verbose):
 def apply(ctx, name, verbose):
     """Apply a backed-up configuration"""
 
-    stored_configs = utils.get_stored_configs()
+    stored_configs = utils.get_stored_config_name_list()
     if stored_configs is None:
         utils.logger.info('No backed up configuration packs present!!\nBackup folder is empty')
         return
@@ -123,7 +134,7 @@ def apply(ctx, name, verbose):
             name = utils.get_config_name()
     utils.create_bak_file(ctx)
     utils.copy_to_set_locations(ctx, name)
-    # send kwin reconfigure signal
+    # TODO: send kwin reconfigure signal
     utils.logger.info(name + ' ---- Applied')
     return 0
 
@@ -134,7 +145,7 @@ def apply(ctx, name, verbose):
 def list(ctx, verbose):
     """List all available backed up configurations"""
     utils.logger.log('Listing existing configurations')
-    utils.get_stored_configs()
+    utils.get_stored_config_name_list()
     utils.echo_configs()
     return 0
 
@@ -148,7 +159,7 @@ def list(ctx, verbose):
 def delete_configuration_backup(ctx, name, verbose):
     """Delete a backed-up configuration"""
 
-    stored_configs = utils.get_stored_configs()
+    stored_configs = utils.get_stored_config_name_list()
     if stored_configs is None:
         utils.logger.info('No backed up configuration packs present!!\nBackup folder is empty')
         return 1
