@@ -77,7 +77,7 @@ class Utils:
 
     def __set_error_logger(self, flag=True):
         def echo_error(arg):
-            click.secho('[ERROR] ' + arg, fg='bright_red', err=True)
+            click.secho('[ERROR] ' + str(arg), fg='bright_red', err=True)
         self.logger.error = echo_error if flag else self.__identity
 
     def enable_verbose(self, ctx, flag_name, enable_flag=False):
@@ -221,7 +221,6 @@ class Utils:
         with open(source_paths_file_location, 'r') as source_paths_file:
             for source_path in source_paths_file:
                 source_path = source_path.strip('\n')
-                source_path = source_path.replace(' ', '\ ')
                 if (len(source_path) >= 2) & (not source_path.startswith('#')):
                     source_path = os.path.join(home_path, source_path)
                     source_paths.append(source_path)
@@ -235,8 +234,11 @@ class Utils:
         error_occurred = False
         for source_path in source_path_list:
             try:
-                call(['cp', '-a', source_path, dest])
+                error = call(['cp', '-a', source_path, dest])
+                if error == 1:
+                    raise Exception
             except Exception as e:
+                self.logger.error('Error occurred while copying '+source_path + ' to location '+dest)
                 self.logger.error('Following error occurred:')
                 self.logger.error(e)
                 error_occurred = True
